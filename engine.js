@@ -287,7 +287,17 @@
     for (const i of order) {
       const uncovered = noteNames.filter(nm => !coveredNames.has(nm));
       let pool = allCandidates.filter(m => uncovered.indexOf(midiToName[m]) >= 0 && !usedMidis.has(m));
-      if (pool.length === 0) pool = allCandidates.filter(m => !usedMidis.has(m));
+      if (pool.length === 0) {
+        // All chord tones covered — must double. Prefer root, then 5th, never 3rd.
+        const root = noteNames[0];
+        const fifth = noteNames.length >= 3 ? noteNames[2] : null;
+        let doublePool = allCandidates.filter(m => midiToName[m] === root && !usedMidis.has(m));
+        if (doublePool.length === 0 && fifth)
+          doublePool = allCandidates.filter(m => midiToName[m] === fifth && !usedMidis.has(m));
+        if (doublePool.length === 0)
+          doublePool = allCandidates.filter(m => !usedMidis.has(m));
+        pool = doublePool;
+      }
       if (pool.length === 0) pool = allCandidates.slice();
       let best = pool[0];
       let bestD = Math.abs(best - prev[i]);

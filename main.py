@@ -394,6 +394,10 @@ def compute_voices(progression: Progression) -> list[list[int]]:
 def index():
     return FileResponse("index.html")
 
+@app.get("/engine.js")
+def engine_js():
+    return FileResponse("engine.js", media_type="application/javascript")
+
 
 @app.get("/chords")
 def get_chords(key: str = "C", mode: str = "major"):
