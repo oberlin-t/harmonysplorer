@@ -890,7 +890,20 @@ async function initAudio() {
   audioCtx = new AC();
 }
 
-// Ensure context is running before scheduling — iOS needs resume() from user gesture
+// Unlock Web Audio on iOS — play a silent buffer on first touch/click
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked || !audioCtx) return;
+  const buf = audioCtx.createBuffer(1, 1, 22050);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start(0);
+  audioCtx.resume().then(() => { audioUnlocked = true; }).catch(() => {});
+}
+document.addEventListener('touchend', unlockAudio, false);
+document.addEventListener('click', unlockAudio, false);
+
 async function ensureAudio() {
   if (!audioCtx) {
     const AC = window.AudioContext || window.webkitAudioContext;
