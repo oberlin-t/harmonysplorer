@@ -884,9 +884,13 @@ addWheelSelect(waveEl, () => { oscType = waveEl.value; saveState(); });
 addWheelNumber(tempoEl, 5, 40, 240, () => saveState());
 
 // ── Audio ──
-// AudioContext created lazily on first user gesture (required by iOS Safari)
-async function initAudio() {} // no-op — context created on demand
+// Create AudioContext on page load (runs immediately on desktop, suspended on iOS)
+async function initAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  audioCtx = new AC();
+}
 
+// Ensure context is running before scheduling — iOS needs resume() from user gesture
 async function ensureAudio() {
   if (!audioCtx) {
     const AC = window.AudioContext || window.webkitAudioContext;
