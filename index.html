@@ -903,6 +903,7 @@ function stopPreview() {
 
 function playNote(midi, duration=1.5, time=0, volumeMul=1.0) {
   if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.connect(gain); gain.connect(audioCtx.destination);
@@ -936,7 +937,7 @@ function previewChordByData(c) {
       }
     }
   }
-  midis.sort((a,b) => a-b).forEach((midi, i) => playNote(midi, 1.8, i * 0.02));
+  midis.sort((a,b) => a-b).forEach((midi) => playNote(midi, 1.8, 0));
 }
 
 function formatPitch(name) {
