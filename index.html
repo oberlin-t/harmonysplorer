@@ -775,6 +775,13 @@
 <script>
 const LS_KEY = 'harmonysplorer_v1';
 let progression = [];
+const DEBUG = new URLSearchParams(location.search).has('debug');
+function dbg(msg) {
+  if (!DEBUG) return;
+  const el = document.getElementById('dbg');
+  if (el) el.textContent = new Date().toISOString().slice(11,23) + ' ' + msg + '\n' + el.textContent.slice(0,800);
+}
+
 let chordData = {};
 let audioCtx = null;
 let previewTimeout = null;
@@ -885,37 +892,25 @@ addWheelSelect(waveEl, () => { oscType = waveEl.value; saveState(); });
 addWheelNumber(tempoEl, 5, 40, 240, () => saveState());
 
 // ── Audio ──
-// AudioContext must be created inside a user gesture (click/touch) for iOS compatibility
-// and to satisfy browser autoplay policy on desktop.
-function initAudio() {} // no-op — context created on first gesture
+function initAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  audioCtx = new AC();
+}
 
+// Desktop autoplay policy requires a click before audio plays
 let audioUnlocked = false;
 function unlockAudio() {
-  if (audioUnlocked) return;
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!audioCtx) audioCtx = new AC(); // inside gesture handler → "running" on desktop
-  try {
-    const buf = audioCtx.createBuffer(1, 1, 22050);
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf; src.connect(audioCtx.destination); src.start(0);
-  } catch(e) {}
+  if (audioUnlocked || !audioCtx) return;
   audioCtx.resume().catch(() => {});
   audioUnlocked = true;
   const hint = document.getElementById('audio-hint');
   if (hint) hint.style.opacity = '0';
 }
-document.addEventListener('touchend', unlockAudio, false);
 document.addEventListener('click', unlockAudio, false);
 
 async function ensureAudio() {
-  if (!audioCtx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AC();
-  }
-  if (audioCtx.state !== 'running') {
-    await audioCtx.resume();
-    await new Promise(r => setTimeout(r, 50)); // iOS needs a moment after resume
-  }
+  if (!audioCtx) return;
+  if (audioCtx.state !== 'running') await audioCtx.resume();
 }
 
 function stopPreview() {
@@ -982,7 +977,7 @@ function stopPlayback() {
   isPlaying = false; clearTimeout(loopTimeout); stopPreview();
   document.getElementById('play-btn').textContent = '▶ Play';
 }
-function togglePlay() { unlockAudio(); if (isPlaying) { stopPlayback(); return; } startPlayback(); }
+function togglePlay() { if (isPlaying) { stopPlayback(); return; } startPlayback(); }
 function toggleLoop() {
   isLooping = !isLooping;
   const btn = document.getElementById('loop-btn');
