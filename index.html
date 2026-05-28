@@ -908,7 +908,14 @@ document.addEventListener('touchend', unlockAudio, false);
 document.addEventListener('click', unlockAudio, false);
 
 async function ensureAudio() {
-  if (!audioCtx || audioCtx.state !== 'running') return;
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state !== 'running') {
+    await audioCtx.resume();
+    await new Promise(r => setTimeout(r, 50)); // iOS needs a moment after resume
+  }
 }
 
 function stopPreview() {
@@ -975,7 +982,7 @@ function stopPlayback() {
   isPlaying = false; clearTimeout(loopTimeout); stopPreview();
   document.getElementById('play-btn').textContent = '▶ Play';
 }
-function togglePlay() { if (isPlaying) { stopPlayback(); return; } startPlayback(); }
+function togglePlay() { unlockAudio(); if (isPlaying) { stopPlayback(); return; } startPlayback(); }
 function toggleLoop() {
   isLooping = !isLooping;
   const btn = document.getElementById('loop-btn');
