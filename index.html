@@ -884,14 +884,18 @@ addWheelSelect(waveEl, () => { oscType = waveEl.value; saveState(); });
 addWheelNumber(tempoEl, 5, 40, 240, () => saveState());
 
 // ── Audio ──
-async function initAudio() {
-  const AC = window.AudioContext || window.webkitAudioContext;
-  audioCtx = new AC();
-}
+// AudioContext created lazily on first user gesture (required by iOS Safari)
+async function initAudio() {} // no-op — context created on demand
 
-// iOS Safari suspends AudioContext until user gesture — resume on any interaction
-document.addEventListener('click', () => { if (audioCtx?.state === 'suspended') audioCtx.resume(); }, {once: false});
-document.addEventListener('touchstart', () => { if (audioCtx?.state === 'suspended') audioCtx.resume(); }, {once: false});
+async function ensureAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state !== 'running') {
+    await audioCtx.resume();
+  }
+}
 
 function stopPreview() {
   const now = audioCtx?.currentTime ?? 0;
@@ -903,7 +907,6 @@ function stopPreview() {
 
 function playNote(midi, duration=1.5, time=0, volumeMul=1.0) {
   if (!audioCtx) return;
-  if (audioCtx.state === 'suspended') audioCtx.resume();
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.connect(gain); gain.connect(audioCtx.destination);
@@ -937,7 +940,7 @@ function previewChordByData(c) {
       }
     }
   }
-  midis.sort((a,b) => a-b).forEach((midi) => playNote(midi, 1.8, 0));
+  ensureAudio().then(() => midis.sort((a,b) => a-b).forEach(midi => playNote(midi, 1.8, 0)));
 }
 
 function formatPitch(name) {
@@ -967,6 +970,7 @@ function toggleLoop() {
 }
 async function startPlayback() {
   if (!progression.length) return;
+  await ensureAudio();
   isPlaying = true;
   document.getElementById('play-btn').textContent = '■ Stop';
   await playProgression();
