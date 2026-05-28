@@ -713,6 +713,7 @@
 </style>
 </head>
 <body>
+<div id="audio-hint" style="position:fixed;bottom:10px;right:10px;background:#1a2a1a;border:1px solid #2d4a2d;color:#4dba4d;padding:5px 9px;border-radius:4px;font-size:11px;pointer-events:none;z-index:999;transition:opacity 0.4s">click to enable audio</div>
 
 <header>
   <h1>HARMONYSPLORER</h1>
@@ -813,7 +814,7 @@ function loadState() {
     if (s.voicing) document.getElementById('voicing-select').value = s.voicing;
     if (Array.isArray(s.progression)) progression = s.progression;
     if (Array.isArray(s.voiceVolumes)) voiceVolumes = s.voiceVolumes;
-    if (s.oscType) oscType = s.oscType;
+    if (s.oscType) { oscType = s.oscType; const w = document.getElementById('wave-select'); if (w) w.value = oscType; }
     if (s.pickerWidth) document.documentElement.style.setProperty('--picker-width', s.pickerWidth);
   } catch {}
 }
@@ -884,34 +885,30 @@ addWheelSelect(waveEl, () => { oscType = waveEl.value; saveState(); });
 addWheelNumber(tempoEl, 5, 40, 240, () => saveState());
 
 // ── Audio ──
-// Create AudioContext on page load (runs immediately on desktop, suspended on iOS)
-async function initAudio() {
-  const AC = window.AudioContext || window.webkitAudioContext;
-  audioCtx = new AC();
-}
+// AudioContext must be created inside a user gesture (click/touch) for iOS compatibility
+// and to satisfy browser autoplay policy on desktop.
+function initAudio() {} // no-op — context created on first gesture
 
-// Unlock Web Audio on iOS — play a silent buffer on first touch/click
 let audioUnlocked = false;
 function unlockAudio() {
-  if (audioUnlocked || !audioCtx) return;
-  const buf = audioCtx.createBuffer(1, 1, 22050);
-  const src = audioCtx.createBufferSource();
-  src.buffer = buf;
-  src.connect(audioCtx.destination);
-  src.start(0);
-  audioCtx.resume().then(() => { audioUnlocked = true; }).catch(() => {});
+  if (audioUnlocked) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!audioCtx) audioCtx = new AC(); // inside gesture handler → "running" on desktop
+  try {
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf; src.connect(audioCtx.destination); src.start(0);
+  } catch(e) {}
+  audioCtx.resume().catch(() => {});
+  audioUnlocked = true;
+  const hint = document.getElementById('audio-hint');
+  if (hint) hint.style.opacity = '0';
 }
 document.addEventListener('touchend', unlockAudio, false);
 document.addEventListener('click', unlockAudio, false);
 
 async function ensureAudio() {
-  if (!audioCtx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AC();
-  }
-  if (audioCtx.state !== 'running') {
-    await audioCtx.resume();
-  }
+  if (!audioCtx || audioCtx.state !== 'running') return;
 }
 
 function stopPreview() {
