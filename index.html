@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Harmonysplorer</title>
+<script src="engine.js"></script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%230b120b'/><text x='16' y='22' text-anchor='middle' font-family='monospace' font-size='13' font-weight='bold' fill='%234dba4d'>V7</text></svg>">
 <style>
   :root {
     --bg:#0b120b; --surf1:#111e11; --surf2:#172317; --surf3:#1e2e1e;
@@ -216,7 +218,7 @@ async function init() {
   loadState();
   initDragHandle();
   renderCatFilters();
-  await loadChords();
+  loadChords();
   await initAudio();
   renderUnified();
 }
@@ -245,10 +247,10 @@ function initDragHandle() {
 }
 
 // ── Chords ──
-async function loadChords() {
+function loadChords() {
   const key = document.getElementById('key-select').value;
   const mode = document.getElementById('mode-select').value;
-  chordData = await fetch(`/chords?key=${key}&mode=${mode}`).then(r => r.json());
+  chordData = Engine.getChords(key, mode);
   renderPicker();
   updateUnifiedVoices();
 }
@@ -305,13 +307,24 @@ function playNote(midi, duration=1.5, time=0, volumeMul=1.0) {
 }
 
 function previewChordByData(c) {
-  c.pitches.forEach((pname, i) => {
-    let midi = pitchNameToMidi(pname);
-    if (!midi) return;
-    while (midi < 48) midi += 12;
-    while (midi > 72) midi -= 12;
-    playNote(midi, 1.8, i*0.02);
-  });
+  const inv = c.default_inversion ?? 0;
+  let midis = c.pitches.map(pitchNameToMidi).filter(Boolean);
+  // Clamp to comfortable range
+  midis = midis.map(m => { while (m < 48) m += 12; while (m > 72) m -= 12; return m; });
+  // Enforce inversion: ensure the right pitch class is lowest
+  if (inv > 0 && inv < midis.length) {
+    const bassPC = midis[inv] % 12;
+    const minMidi = Math.min(...midis);
+    if (minMidi % 12 !== bassPC) {
+      const idx = midis.findIndex(m => m % 12 === bassPC);
+      if (idx !== -1) {
+        let b = midis[idx];
+        while (b >= minMidi) b -= 12;
+        if (b >= 36) midis[idx] = b;
+      }
+    }
+  }
+  midis.sort((a,b) => a-b).forEach((midi, i) => playNote(midi, 1.8, i * 0.02));
 }
 
 function formatPitch(name) {
@@ -350,7 +363,7 @@ async function playProgression() {
   const bps = parseInt(tempoEl.value) / 60;
   let time = 0;
   try {
-    const voiced = await fetchVoiceLeading();
+    const voiced = fetchVoiceLeading();
     for (const row of voiced.table) {
       const dur = row.duration / bps;
       row.voices.forEach((v, vi) => {
@@ -470,7 +483,7 @@ async function addCustomChord() {
   if (!numeral) return;
   const key = document.getElementById('key-select').value;
   const mode = document.getElementById('mode-select').value;
-  const data = await fetch('/parse-chord', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({numeral,key,mode})}).then(r=>r.json());
+  const data = Engine.parseChord(numeral, key, mode);
   if (data.error) { setStatus(`Error: ${data.error}`); return; }
   if (!isPlaying) previewChordByData(data);
   addChord(data.numeral, data.duration_default, null, data.default_inversion ?? 0);
@@ -505,7 +518,7 @@ function isSeventhChord(numeral) { return /7|maj7|h7|o7/.test(numeral); }
 function getTimeSig() { return 4; }
 
 // ── Unified table ──
-async function renderUnified() {
+function renderUnified() {
   const head = document.getElementById('ut-head');
   const body = document.getElementById('ut-body');
   if (!progression.length) {
@@ -515,7 +528,7 @@ async function renderUnified() {
   }
 
   let voiceData = null;
-  try { voiceData = await fetchVoiceLeading(); } catch {}
+  try { voiceData = fetchVoiceLeading(); } catch {}
 
   const nv = 4;
   head.innerHTML = `<th></th><th>chord</th><th>dur</th>` +
@@ -573,7 +586,7 @@ async function renderUnified() {
       const key = document.getElementById('key-select').value;
       const mode = document.getElementById('mode-select').value;
       const val = e.target.value.trim();
-      const data = await fetch('/parse-chord', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({numeral:val,key,mode})}).then(r=>r.json());
+      const data = Engine.parseChord(val, key, mode);
       if (data.error) { e.target.value = c.numeral; setStatus(`Error: ${data.error}`); return; }
       progression[i].numeral = val;
       progression[i].inversion = data.default_inversion ?? 0;
@@ -604,18 +617,15 @@ async function renderUnified() {
   });
 }
 
-async function updateUnifiedVoices() { await renderUnified(); }
+function updateUnifiedVoices() { renderUnified(); }
 
-async function fetchVoiceLeading() {
+function fetchVoiceLeading() {
   const key = document.getElementById('key-select').value;
   const mode = document.getElementById('mode-select').value;
   const tempo = parseInt(tempoEl.value);
-  return fetch('/voice-lead', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({key, mode, tempo, time_sig:[4,4], n_voices:4,
-      voicing_style: voicingEl.value, voice_volumes: voiceVolumes,
-      chords: progression.map(c => ({numeral:c.numeral, duration:c.duration, inversion:c.inversion??0}))})
-  }).then(r => r.json());
+  return Engine.voiceLead({key, mode, tempo, time_sig:[4,4], n_voices:4,
+    voicing_style: voicingEl.value, voice_volumes: voiceVolumes,
+    chords: progression.map(c => ({numeral:c.numeral, duration:c.duration, inversion:c.inversion??0}))});
 }
 
 function detectParallels(table) {
@@ -634,13 +644,12 @@ function detectParallels(table) {
 }
 
 // ── Export ──
-async function exportMidi() {
+function exportMidi() {
   if (!progression.length) return;
   const key=document.getElementById('key-select').value, mode=document.getElementById('mode-select').value, tempo=parseInt(tempoEl.value);
-  const res = await fetch('/export/midi', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({key,mode,tempo,time_sig:[4,4],n_voices:4,voicing_style:voicingEl.value,
-      voice_volumes:voiceVolumes, chords:progression.map(c=>({numeral:c.numeral,duration:c.duration,inversion:c.inversion??0}))})});
-  const blob = await res.blob();
+  const bytes = Engine.exportMidi({key,mode,tempo,time_sig:[4,4],n_voices:4,voicing_style:voicingEl.value,
+    voice_volumes:voiceVolumes, chords:progression.map(c=>({numeral:c.numeral,duration:c.duration,inversion:c.inversion??0}))});
+  const blob = new Blob([bytes], {type:'audio/midi'});
   Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:'harmonysplorer.mid'}).click();
 }
 
