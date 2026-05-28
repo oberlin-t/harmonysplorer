@@ -5,122 +5,104 @@
 <title>Harmonysplorer</title>
 <style>
   :root {
-    --bg:       #0b120b;
-    --surf1:    #111e11;
-    --surf2:    #172317;
-    --surf3:    #1e2e1e;
-    --border:   #263826;
-    --border2:  #3a5a3a;
-    --text:     #b8d4b0;
-    --text2:    #6a9a6a;
-    --text3:    #3d5e3d;
-    --accent:   #4dba4d;
-    --accent2:  #2e7a2e;
-    --neg:      #b06060;
-    --warn-bg:  #1e1a00;
-    --warn:     #aa9900;
+    --bg:#0b120b; --surf1:#111e11; --surf2:#172317; --surf3:#1e2e1e;
+    --border:#263826; --border2:#3a5a3a;
+    --text:#b8d4b0; --text2:#6a9a6a; --text3:#3d5e3d;
+    --accent:#4dba4d; --accent2:#2e7a2e; --neg:#b06060;
+    --warn-bg:#1e1a00; --warn:#aa9900;
+    --picker-width: 300px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: monospace; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
 
-  header { padding: 10px 16px; background: var(--surf1); border-bottom: 1px solid var(--border); display: flex; gap: 16px; align-items: center; }
-  header h1 { font-size: 0.9rem; color: var(--accent); letter-spacing: 0.15em; }
-  select, input[type=number] { background: var(--surf2); color: var(--text); border: 1px solid var(--border2); padding: 3px 7px; font-family: monospace; font-size: 0.82rem; }
+  header { padding: 8px 14px; background: var(--surf1); border-bottom: 1px solid var(--border); display: flex; gap: 14px; align-items: center; flex-shrink: 0; }
+  header h1 { font-size: 0.88rem; color: var(--accent); letter-spacing: 0.15em; }
+  select, input[type=number] { background: var(--surf2); color: var(--text); border: 1px solid var(--border2); padding: 3px 6px; font-family: monospace; font-size: 0.8rem; }
   input[type=number] { -moz-appearance: textfield; appearance: textfield; }
-  input[type=number]::-webkit-inner-spin-button,
-  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-  label { color: var(--text3); font-size: 0.78rem; margin-right: 3px; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  label { color: var(--text3); font-size: 0.75rem; margin-right: 2px; }
 
-  main { display: grid; grid-template-columns: 280px 1fr 1fr; flex: 1; overflow: hidden; }
+  main { display: grid; grid-template-columns: var(--picker-width) 5px 1fr; flex: 1; overflow: hidden; }
 
-  .panel { border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; }
-  .panel h2 { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--text3); text-transform: uppercase; margin-bottom: 10px; }
-
-  .fn-group { margin-bottom: 12px; }
-  .fn-label { font-size: 0.6rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 5px; }
-  .cat-filters { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
-  .cat-btn {
-    font-size: 0.58rem; background: var(--surf2); border: 1px solid var(--border);
-    color: var(--text3); padding: 2px 8px; cursor: pointer; font-family: monospace;
+  /* ── Drag handle ── */
+  #drag-handle {
+    background: var(--border); cursor: col-resize;
+    transition: background 0.1s;
   }
+  #drag-handle:hover, #drag-handle.dragging { background: var(--accent2); }
+
+  /* ── Picker panel ── */
+  #picker-panel { display: flex; flex-direction: column; overflow: hidden; border-right: none; padding: 8px; }
+  .panel-head { font-size: 0.6rem; letter-spacing: 0.14em; color: var(--text3); text-transform: uppercase; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .cat-filters { display: flex; gap: 3px; margin-bottom: 6px; flex-shrink: 0; }
+  .cat-btn { font-size: 0.56rem; background: var(--surf2); border: 1px solid var(--border); color: var(--text3); padding: 2px 7px; cursor: pointer; font-family: monospace; }
   .cat-btn.active { border-color: var(--accent2); color: var(--accent); background: var(--surf3); }
-  .fn-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
-  .fn-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; margin-bottom: 2px; }
+
+  #chord-picker { flex: 1; overflow-y: auto; min-height: 0; }
+  .fn-group { margin-bottom: 5px; }
+  .fn-label { font-size: 0.56rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+  .fn-divider { border: none; border-top: 1px solid var(--border); margin: 3px 0; }
+  .fn-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; margin-bottom: 1px; }
   .chord-btn {
     display: block; width: 100%; text-align: left;
     background: var(--surf2); border: 1px solid var(--border); color: var(--text2);
-    padding: 5px 7px; cursor: pointer; font-family: monospace; font-size: 0.8rem;
-    transition: background 0.08s, border-color 0.08s; overflow: hidden; white-space: nowrap;
+    padding: 3px 5px; cursor: pointer; font-family: monospace; font-size: 0.73rem;
+    transition: background 0.08s; overflow: hidden; white-space: nowrap;
   }
   .chord-btn:hover { background: var(--surf3); border-color: var(--border2); color: var(--text); }
-  .chord-btn .name { font-size: 0.6rem; color: var(--text3); margin-left: 3px; }
-  .custom-input { display: flex; gap: 4px; margin-top: 10px; }
-  .custom-input input {
-    flex: 1; background: var(--surf2); border: 1px solid var(--border2); color: var(--text);
-    font-family: monospace; font-size: 0.82rem; padding: 5px 8px;
-  }
-  .custom-input button {
-    background: var(--surf2); border: 1px solid var(--border2); color: var(--text2);
-    font-family: monospace; font-size: 0.85rem; padding: 5px 11px; cursor: pointer;
-  }
+
+  .custom-input { display: flex; gap: 3px; margin-top: 6px; flex-shrink: 0; }
+  .custom-input input { flex: 1; background: var(--surf2); border: 1px solid var(--border2); color: var(--text); font-family: monospace; font-size: 0.8rem; padding: 4px 7px; }
+  .custom-input button { background: var(--surf2); border: 1px solid var(--border2); color: var(--text2); font-family: monospace; font-size: 0.85rem; padding: 4px 10px; cursor: pointer; }
   .custom-input button:hover { background: var(--surf3); color: var(--text); }
 
-  #progression-panel { display: flex; flex-direction: column; }
-  #chord-list { flex: 1; overflow-y: auto; }
-  .chord-item {
-    display: flex; align-items: center; gap: 7px;
-    padding: 7px 10px; border-bottom: 1px solid var(--border);
-    cursor: grab;
-  }
-  .chord-item:hover { background: var(--surf2); }
-  .chord-item.dragging { opacity: 0.4; }
-  .chord-item.drag-over { border-top: 2px solid var(--accent); }
-  .chord-item .bar-num { font-size: 0.58rem; color: var(--text3); width: 32px; flex-shrink: 0; }
-  .chord-item .numeral { min-width: 52px; font-size: 0.9rem; color: var(--text); }
-  .chord-item .dur-input {
-    width: 46px; background: var(--surf2); border: 1px solid var(--border);
-    color: var(--text2); font-family: monospace; font-size: 0.78rem; padding: 2px 4px;
-  }
-  .chord-item .beats-label { font-size: 0.68rem; color: var(--text3); }
-  .chord-item .inv-select {
-    background: var(--surf2); border: 1px solid var(--border); color: var(--text3);
-    font-family: monospace; font-size: 0.72rem; padding: 2px 3px;
-  }
-  .chord-item .remove-btn { margin-left: auto; background: none; border: none; color: var(--text3); cursor: pointer; font-size: 1rem; }
-  .chord-item .remove-btn:hover { color: var(--neg); }
+  /* ── Right panel ── */
+  #right-panel { display: flex; flex-direction: column; overflow: hidden; border-left: 1px solid var(--border); }
 
-  .prog-actions { padding: 8px 10px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-  button.action, label.action {
-    background: var(--surf2); border: 1px solid var(--border2); color: var(--text2);
-    padding: 5px 8px; font-family: monospace; font-size: 0.75rem; cursor: pointer;
-    text-align: center; display: block;
-  }
-  button.action:hover, label.action:hover { background: var(--surf3); color: var(--text); }
-  button.action.primary { border-color: var(--accent); color: var(--accent); }
-  button.action.primary:hover { background: var(--surf3); }
+  /* Voice mixer — lives inside sticky th cells */
+  .th-voice { text-align: center !important; }
+  .th-voice .voice-channel { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .th-voice .voice-channel input[type=range] { -webkit-appearance: slider-vertical; writing-mode: vertical-lr; width: 16px; height: 48px; cursor: pointer; accent-color: var(--accent); }
+  .th-voice .voice-channel .vol-num { font-size: 0.58rem; color: var(--text2); }
+  .th-voice .voice-channel label { font-size: 0.6rem; color: var(--text3); }
 
-  .voice-mixer { display: flex; gap: 4px; padding: 8px 8px 6px; border-bottom: 1px solid var(--border); }
-  .voice-channel { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
-  .voice-channel label { font-size: 0.6rem; color: var(--text3); }
-  .voice-channel input[type=range] {
-    -webkit-appearance: slider-vertical; writing-mode: vertical-lr;
-    width: 20px; height: 60px; cursor: pointer;
-    accent-color: var(--accent);
+  /* Unified table */
+  #unified-table-wrap { flex: 1; overflow-y: auto; min-height: 0; }
+  #unified-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+  #unified-table th { color: var(--text3); text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); font-weight: normal; position: sticky; top: 0; background: var(--surf1); z-index: 1; }
+  #unified-table td { padding: 4px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  #unified-table tr { cursor: grab; }
+  #unified-table tr:hover td { background: var(--surf2); }
+  #unified-table tr.dragging { opacity: 0.4; }
+  #unified-table tr.drag-over td { border-top: 2px solid var(--accent); }
+  .td-bar { font-size: 0.56rem; color: var(--text3); white-space: nowrap; }
+  .td-numeral-input {
+    font-size: 0.9rem; color: var(--text); background: transparent; border: none;
+    font-family: monospace; width: 80px; padding: 0;
   }
-  .voice-channel .vol-num { font-size: 0.62rem; color: var(--text2); }
-
-  #voice-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-  #voice-table th { color: var(--text3); text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); font-weight: normal; }
-  #voice-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
-  #voice-table tr:hover td { background: var(--surf2); }
+  .td-numeral-input:focus { outline: 1px solid var(--border2); background: var(--surf2); }
+  .td-dur { width: 42px; background: var(--surf2); border: 1px solid var(--border); color: var(--text2); font-family: monospace; font-size: 0.72rem; padding: 1px 3px; }
+  .td-inv { background: var(--surf2); border: 1px solid var(--border); color: var(--text3); font-family: monospace; font-size: 0.68rem; padding: 1px 2px; }
+  .td-remove { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 0.9rem; }
+  .td-remove:hover { color: var(--neg); }
   .delta-pos { color: var(--accent); }
   .delta-neg { color: var(--neg); }
   .delta-zero { color: var(--text3); }
   .parallel-warn { background: var(--warn-bg) !important; }
-  .parallel-warn::after { content: ' ⚠'; font-size: 0.6rem; color: var(--warn); }
+  .parallel-warn::after { content: ' ⚠'; font-size: 0.56rem; color: var(--warn); }
+  .td-pitch { white-space: nowrap; font-size: 0.72rem; }
 
-  #status { padding: 5px 16px; background: var(--surf1); border-top: 1px solid var(--border); font-size: 0.68rem; color: var(--text3); }
-  .view-toggle { font-size: 0.58rem; background: var(--surf2); border: 1px solid var(--border2); color: var(--accent); padding: 2px 7px; cursor: pointer; font-family: monospace; }
+  /* Actions */
+  .prog-actions { padding: 7px 10px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; flex-shrink: 0; }
+  button.action, label.action {
+    background: var(--surf2); border: 1px solid var(--border2); color: var(--text2);
+    padding: 5px 6px; font-family: monospace; font-size: 0.72rem; cursor: pointer; text-align: center; display: block;
+  }
+  button.action:hover, label.action:hover { background: var(--surf3); color: var(--text); }
+  button.action.primary { border-color: var(--accent); color: var(--accent); }
+
+  #status { padding: 4px 14px; background: var(--surf1); border-top: 1px solid var(--border); font-size: 0.65rem; color: var(--text3); flex-shrink: 0; }
+  .view-toggle { font-size: 0.56rem; background: var(--surf2); border: 1px solid var(--border2); color: var(--accent); padding: 2px 6px; cursor: pointer; font-family: monospace; }
 </style>
 </head>
 <body>
@@ -131,32 +113,44 @@
     <option>C</option><option>G</option><option>D</option><option>A</option><option>E</option><option>B</option>
     <option>F</option><option>Bb</option><option>Eb</option><option>Ab</option><option>Db</option><option>F#</option>
   </select></label>
-  <label>Mode <select id="mode-select">
-    <option value="major">major</option>
-    <option value="minor">minor</option>
+  <label>Tempo <input type="number" id="tempo" value="120" min="40" max="240" style="width:56px"></label>
+  <label>Wave <select id="wave-select">
+    <option value="triangle">tri</option><option value="sine">sine</option>
+    <option value="square">sq</option><option value="sawtooth">saw</option>
   </select></label>
-  <label>Tempo <input type="number" id="tempo" value="120" min="40" max="240" style="width:58px"></label>
   <label>Voicing <select id="voicing-select">
-    <option value="close">close</option>
-    <option value="drop2">drop-2</option>
-    <option value="open">open</option>
+    <option value="close">close</option><option value="drop2">drop-2</option><option value="open">open</option>
   </select></label>
 </header>
 
 <main>
-  <div class="panel" id="picker-panel">
-    <h2>Chords</h2>
+  <!-- Chord picker -->
+  <div id="picker-panel">
+    <div class="panel-head">
+      Chords
+      <label style="font-size:0.7rem;color:var(--text2)"><select id="mode-select" style="font-size:0.7rem;padding:1px 4px">
+        <option value="major">major</option><option value="minor">minor</option>
+      </select></label>
+    </div>
     <div class="cat-filters" id="cat-filters"></div>
     <div id="chord-picker"></div>
     <div class="custom-input">
-      <input id="custom-numeral" type="text" placeholder="e.g. bII, V7/IV" spellcheck="false">
+      <input id="custom-numeral" type="text" placeholder="e.g. bVI7, V7:1" spellcheck="false">
       <button onclick="addCustomChord()">+</button>
     </div>
   </div>
 
-  <div class="panel" id="progression-panel">
-    <h2>Progression</h2>
-    <div id="chord-list"></div>
+  <!-- Drag handle -->
+  <div id="drag-handle"></div>
+
+  <!-- Right panel: mixer + unified table + actions -->
+  <div id="right-panel">
+    <div id="unified-table-wrap">
+      <table id="unified-table">
+        <thead><tr id="ut-head"></tr></thead>
+        <tbody id="ut-body"></tbody>
+      </table>
+    </div>
     <div class="prog-actions">
       <button class="action primary" id="play-btn" onclick="togglePlay()">▶ Play</button>
       <button class="action" id="loop-btn" onclick="toggleLoop()">⟳ Loop</button>
@@ -166,22 +160,12 @@
       <button class="action" onclick="clearProgression()">✕ Clear</button>
     </div>
   </div>
-
-  <div class="panel">
-    <h2>Voice Leading</h2>
-    <div class="voice-mixer" id="voice-mixer"></div>
-    <table id="voice-table">
-      <thead><tr id="vt-head"></tr></thead>
-      <tbody id="vt-body"></tbody>
-    </table>
-  </div>
 </main>
 
 <div id="status">hover a chord to preview · click to add</div>
 
 <script>
 const LS_KEY = 'harmonysplorer_v1';
-
 let progression = [];
 let chordData = {};
 let audioCtx = null;
@@ -190,186 +174,133 @@ let activeNodes = [];
 let isLooping = false;
 let isPlaying = false;
 let loopTimeout = null;
-const FN_LABELS = { tonic: 'Tonic', predominant: 'Pre-dominant', dominant: 'Dominant' };
-let voiceVolumes = [100, 85, 85, 75]; // V1–V4 default levels
-const CATS = ['diatonic', 'borrowed', 'secondary'];
+let pickerView = 'function';
+let voiceVolumes = [100, 85, 85, 75];
+let oscType = 'triangle';
+let dragSrcIndex = null;
+let sectionCollapsed = {};
+
+const FN_LABELS = { tonic:'Tonic', predominant:'Pre-dominant', dominant:'Dominant' };
+const CATS = ['diatonic','borrowed','secondary'];
 let activeCategories = new Set(CATS);
 
-function renderMixer() {
-  const el = document.getElementById('voice-mixer');
-  el.innerHTML = '';
-  voiceVolumes.forEach((vol, i) => {
-    const ch = document.createElement('div');
-    ch.className = 'voice-channel';
-    ch.innerHTML = `
-      <label>V${i+1}</label>
-      <input type="range" min="0" max="100" value="${vol}" orient="vertical">
-      <span class="vol-num">${vol}</span>
-    `;
-    const slider = ch.querySelector('input');
-    const num = ch.querySelector('.vol-num');
-    const update = v => {
-      voiceVolumes[i] = parseInt(v);
-      num.textContent = v;
-      saveState();
-    };
-    slider.addEventListener('input', e => update(e.target.value));
-    addWheelNumber(slider, 5, 0, 100, el => update(el.value));
-    el.appendChild(ch);
-  });
-}
-
-function chordCategory(c) {
-  if (c.fn === 'borrowed') return 'borrowed';
-  if (c.fn === 'secondary') return 'secondary';
-  return 'diatonic';
-}
-
-// --- Wheel scroll helpers ---
-let wheelCD = new WeakMap();
-function wheelCooldown(el, ms = 150) {
-  if (wheelCD.get(el)) return true;
-  wheelCD.set(el, true);
-  setTimeout(() => wheelCD.set(el, false), ms);
-  return false;
-}
-
-function addWheelSelect(el, onChange) {
-  el.addEventListener('wheel', e => {
-    e.preventDefault();
-    if (wheelCooldown(el)) return;
-    const dir = e.deltaY > 0 ? 1 : -1;
-    const next = Math.max(0, Math.min(el.options.length - 1, el.selectedIndex + dir));
-    if (next !== el.selectedIndex) { el.selectedIndex = next; onChange(el); }
-  }, { passive: false });
-}
-
-function addWheelNumber(el, step, min, max, onChange) {
-  el.addEventListener('wheel', e => {
-    e.preventDefault();
-    if (wheelCooldown(el)) return;
-    const dir = e.deltaY > 0 ? -1 : 1;
-    const val = Math.min(max, Math.max(min, parseFloat(el.value) + dir * step));
-    if (val !== parseFloat(el.value)) { el.value = val; onChange(el); }
-  }, { passive: false });
-}
-
-function renderCatFilters() {
-  const el = document.getElementById('cat-filters');
-  el.innerHTML = '';
-  CATS.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.className = 'cat-btn' + (activeCategories.has(cat) ? ' active' : '');
-    btn.textContent = cat;
-    btn.addEventListener('click', () => {
-      if (activeCategories.has(cat)) {
-        if (activeCategories.size > 1) activeCategories.delete(cat);
-      } else {
-        activeCategories.add(cat);
-      }
-      renderCatFilters();
-      renderPicker();
-    });
-    el.appendChild(btn);
-  });
-}
-
-// --- Persistence ---
+// ── Persistence ──
 function saveState() {
-  const state = {
-    progression,
+  localStorage.setItem(LS_KEY, JSON.stringify({
+    progression, voiceVolumes, oscType,
     key: document.getElementById('key-select').value,
     mode: document.getElementById('mode-select').value,
     tempo: document.getElementById('tempo').value,
     voicing: document.getElementById('voicing-select').value,
-    voiceVolumes,
-  };
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
+    pickerWidth: getComputedStyle(document.documentElement).getPropertyValue('--picker-width').trim(),
+  }));
 }
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return;
-    const s = JSON.parse(raw);
+    const s = JSON.parse(localStorage.getItem(LS_KEY));
+    if (!s) return;
     if (s.key) document.getElementById('key-select').value = s.key;
     if (s.mode) document.getElementById('mode-select').value = s.mode;
     if (s.tempo) document.getElementById('tempo').value = s.tempo;
     if (s.voicing) document.getElementById('voicing-select').value = s.voicing;
     if (Array.isArray(s.progression)) progression = s.progression;
     if (Array.isArray(s.voiceVolumes)) voiceVolumes = s.voiceVolumes;
+    if (s.oscType) oscType = s.oscType;
+    if (s.pickerWidth) document.documentElement.style.setProperty('--picker-width', s.pickerWidth);
   } catch {}
 }
 
-// --- Init ---
+// ── Init ──
 async function init() {
   loadState();
+  initDragHandle();
   renderCatFilters();
-  renderMixer();
   await loadChords();
   await initAudio();
-  renderProgression();
-  updateVoiceTable();
+  renderUnified();
 }
 
+// ── Drag handle ──
+function initDragHandle() {
+  const handle = document.getElementById('drag-handle');
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    handle.classList.add('dragging');
+    const startX = e.clientX;
+    const startW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--picker-width'));
+    const onMove = e => {
+      const w = Math.max(180, Math.min(520, startW + e.clientX - startX));
+      document.documentElement.style.setProperty('--picker-width', w + 'px');
+    };
+    const onUp = () => {
+      handle.classList.remove('dragging');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      saveState();
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
+}
+
+// ── Chords ──
 async function loadChords() {
   const key = document.getElementById('key-select').value;
   const mode = document.getElementById('mode-select').value;
-  const res = await fetch(`/chords?key=${key}&mode=${mode}`);
-  chordData = await res.json();
+  chordData = await fetch(`/chords?key=${key}&mode=${mode}`).then(r => r.json());
   renderPicker();
+  updateUnifiedVoices();
 }
 
-const keyEl = document.getElementById('key-select');
-const modeEl = document.getElementById('mode-select');
+document.getElementById('key-select').addEventListener('change', () => { loadChords(); saveState(); });
+document.getElementById('mode-select')?.addEventListener('change', () => { loadChords(); saveState(); });
+
 const voicingEl = document.getElementById('voicing-select');
-const tempoEl = document.getElementById('tempo');
-
-keyEl.addEventListener('change', () => { loadChords(); saveState(); });
-modeEl.addEventListener('change', () => { loadChords(); saveState(); });
-voicingEl.addEventListener('change', () => { updateVoiceTable(); saveState(); });
+const tempoEl   = document.getElementById('tempo');
+const waveEl    = document.getElementById('wave-select');
+voicingEl.addEventListener('change', () => { updateUnifiedVoices(); saveState(); });
 tempoEl.addEventListener('change', saveState);
+waveEl.addEventListener('change', () => { oscType = waveEl.value; saveState(); });
 
-addWheelSelect(keyEl,     () => { loadChords(); saveState(); });
-addWheelSelect(modeEl,    () => { loadChords(); saveState(); });
-addWheelSelect(voicingEl, () => { updateVoiceTable(); saveState(); });
+// Wheel helpers
+let wheelCD = new WeakMap();
+function wcd(el, ms=150) { if (wheelCD.get(el)) return true; wheelCD.set(el, true); setTimeout(()=>wheelCD.set(el,false), ms); return false; }
+function addWheelSelect(el, cb) { el.addEventListener('wheel', e => { e.preventDefault(); if(wcd(el)) return; const dir=e.deltaY>0?1:-1; const n=Math.max(0,Math.min(el.options.length-1,el.selectedIndex+dir)); if(n!==el.selectedIndex){el.selectedIndex=n;cb(el);} }, {passive:false}); }
+function addWheelNumber(el, step, min, max, cb) { el.addEventListener('wheel', e => { e.preventDefault(); if(wcd(el)) return; const dir=e.deltaY>0?-1:1; const v=Math.min(max,Math.max(min,parseFloat(el.value)+dir*step)); if(v!==parseFloat(el.value)){el.value=v;cb(el);} }, {passive:false}); }
+
+addWheelSelect(document.getElementById('key-select'), () => { loadChords(); saveState(); });
+const modeEl = document.getElementById('mode-select');
+if (modeEl) { addWheelSelect(modeEl, () => { loadChords(); saveState(); }); }
+addWheelSelect(voicingEl, () => { updateUnifiedVoices(); saveState(); });
+addWheelSelect(waveEl, () => { oscType = waveEl.value; saveState(); });
 addWheelNumber(tempoEl, 5, 40, 240, () => saveState());
 
-// --- Audio ---
-async function initAudio() {
-  audioCtx = new AudioContext();
-}
+// ── Audio ──
+async function initAudio() { audioCtx = new AudioContext(); }
 
 function stopPreview() {
   const now = audioCtx?.currentTime ?? 0;
   for (const {osc, gain} of activeNodes) {
-    try {
-      gain.gain.cancelScheduledValues(now);
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.linearRampToValueAtTime(0, now + 0.12);
-      osc.stop(now + 0.13);
-    } catch {}
+    try { gain.gain.cancelScheduledValues(now); gain.gain.setValueAtTime(0.15, now); gain.gain.linearRampToValueAtTime(0, now+0.12); osc.stop(now+0.13); } catch {}
   }
   activeNodes = [];
 }
 
-function playNote(midi, duration = 1.5, time = 0, volumeMul = 1.0) {
+function playNote(midi, duration=1.5, time=0, volumeMul=1.0) {
   if (!audioCtx) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
-  osc.type = 'triangle';
-  const hold = Math.max(duration, 1.5);
-  const peak = 0.15 * volumeMul;
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.frequency.value = 440 * Math.pow(2, (midi-69)/12);
+  osc.type = oscType;
   const start = audioCtx.currentTime + time;
+  const peak = 0.15 * volumeMul;
   gain.gain.setValueAtTime(0, start);
-  gain.gain.linearRampToValueAtTime(peak, start + 0.01);
-  gain.gain.setValueAtTime(peak, start + hold - 0.04);
-  gain.gain.linearRampToValueAtTime(0, start + hold);
-  osc.start(start);
-  osc.stop(start + hold + 0.05);
+  gain.gain.linearRampToValueAtTime(peak, start+0.01);
+  gain.gain.setValueAtTime(peak, start+duration-0.04);
+  gain.gain.linearRampToValueAtTime(0, start+duration);
+  osc.start(start); osc.stop(start+duration+0.05);
   activeNodes.push({osc, gain});
 }
 
@@ -379,7 +310,7 @@ function previewChordByData(c) {
     if (!midi) return;
     while (midi < 48) midi += 12;
     while (midi > 72) midi -= 12;
-    playNote(midi, 1.8, i * 0.02);
+    playNote(midi, 1.8, i*0.02);
   });
 }
 
@@ -390,74 +321,105 @@ function formatPitch(name) {
 function pitchNameToMidi(name) {
   const match = name.match(/^([A-G][#b\-]{0,2})(-?\d+)$/);
   if (!match) return null;
-  const noteMap = {
-    C:0, 'C#':1, 'C-':11, Db:1,
-    D:2, 'D#':3, 'D-':1,  Eb:3, 'E-':3,
-    E:4, 'E#':5,
-    F:5, 'F#':6, 'F-':4,  Gb:6,
-    G:7, 'G#':8, 'G-':6,  Ab:8, 'A-':8,
-    A:9, 'A#':10,'A-':8,  Bb:10,'B-':10,
-    B:11,'B#':0,
-  };
-  return (parseInt(match[2]) + 1) * 12 + (noteMap[match[1]] ?? 0);
+  const nm = {'C':0,'C#':1,'Db':1,'D':2,'D#':3,'D-':1,'Eb':3,'E-':3,'E':4,'E#':5,
+               'F':5,'F#':6,'F-':4,'Gb':6,'G':7,'G#':8,'G-':6,'Ab':8,'A-':8,'A':9,
+               'A#':10,'Bb':10,'B-':10,'B':11,'B#':0,'Cb':11,'C-':11};
+  return (parseInt(match[2])+1)*12 + (nm[match[1]] ?? 0);
 }
 
-// --- Playback ---
+// ── Playback ──
 function stopPlayback() {
-  isPlaying = false;
-  clearTimeout(loopTimeout);
-  stopPreview();
+  isPlaying = false; clearTimeout(loopTimeout); stopPreview();
   document.getElementById('play-btn').textContent = '▶ Play';
 }
-
-function togglePlay() {
-  if (isPlaying) { stopPlayback(); return; }
-  startPlayback();
-}
-
+function togglePlay() { if (isPlaying) { stopPlayback(); return; } startPlayback(); }
 function toggleLoop() {
   isLooping = !isLooping;
   const btn = document.getElementById('loop-btn');
   btn.style.color = isLooping ? 'var(--accent)' : '';
   btn.style.borderColor = isLooping ? 'var(--accent)' : '';
 }
-
 async function startPlayback() {
-  if (progression.length === 0) return;
+  if (!progression.length) return;
   isPlaying = true;
   document.getElementById('play-btn').textContent = '■ Stop';
   await playProgression();
 }
-
 async function playProgression() {
   if (!isPlaying) return;
-  const tempo = parseInt(document.getElementById('tempo').value);
-  const beatsPerSec = tempo / 60;
+  const bps = parseInt(tempoEl.value) / 60;
   let time = 0;
   try {
     const voiced = await fetchVoiceLeading();
     for (const row of voiced.table) {
-      const dur = row.duration / beatsPerSec;
+      const dur = row.duration / bps;
       row.voices.forEach((v, vi) => {
         const midi = pitchNameToMidi(v.pitch);
-        if (midi) playNote(midi, dur * 0.92, time, voiceVolumes[vi] / 100);
+        if (midi) playNote(midi, dur*0.92, time, voiceVolumes[vi]/100);
       });
       time += dur;
     }
-  } catch { time = 2; } // on error, wait 2s and retry
+  } catch { time = 2; }
   if (isPlaying) {
     loopTimeout = setTimeout(() => {
       if (isLooping || time > 0) playProgression();
       else { isPlaying = false; document.getElementById('play-btn').textContent = '▶ Play'; }
-    }, time * 1000);
+    }, time*1000);
   }
 }
 
-// --- Picker ---
+// ── Mixer ──
+function renderMixer() {
+  const el = document.getElementById('voice-mixer');
+  el.innerHTML = '';
+  voiceVolumes.forEach((vol, i) => {
+    const ch = document.createElement('div');
+    ch.className = 'voice-channel';
+    ch.innerHTML = `<label>V${i+1}</label><input type="range" min="0" max="100" value="${vol}" orient="vertical"><span class="vol-num">${vol}</span>`;
+    const slider = ch.querySelector('input');
+    const num = ch.querySelector('.vol-num');
+    const update = v => { voiceVolumes[i]=parseInt(v); num.textContent=v; saveState(); };
+    slider.addEventListener('input', e => update(e.target.value));
+    addWheelNumber(slider, 5, 0, 100, el => update(el.value));
+    el.appendChild(ch);
+  });
+}
+
+// ── Picker ──
+function chordCategory(c) {
+  if (c.fn==='borrowed') return 'borrowed';
+  if (c.fn==='secondary') return 'secondary';
+  return 'diatonic';
+}
+
+function renderCatFilters() {
+  const el = document.getElementById('cat-filters');
+  el.innerHTML = '';
+  CATS.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (activeCategories.has(cat) ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => {
+      if (activeCategories.has(cat)) { if (activeCategories.size > 1) activeCategories.delete(cat); }
+      else activeCategories.add(cat);
+      renderCatFilters(); renderPicker();
+    });
+    el.appendChild(btn);
+  });
+}
+
+function togglePickerView() {
+  pickerView = pickerView === 'type' ? 'function' : 'type';
+  const btn = document.getElementById('view-toggle');
+  btn.textContent = pickerView === 'function' ? 'by fn' : 'by type';
+  btn.style.color = pickerView === 'function' ? 'var(--accent)' : 'var(--text3)';
+  renderPicker();
+}
+
 function makeChordBtn(c) {
   const btn = document.createElement('button');
   btn.className = 'chord-btn';
-  btn.innerHTML = c.numeral;
+  btn.textContent = c.numeral;
   btn.addEventListener('mouseenter', () => {
     setStatus(`${c.numeral} — ${c.name} (${c.pitches.map(formatPitch).join(', ')}) · click to add`);
     if (isPlaying) return;
@@ -469,16 +431,14 @@ function makeChordBtn(c) {
     if (!isPlaying) stopPreview();
     setStatus('hover a chord to preview · click to add');
   });
-  btn.addEventListener('click', () => addChord(c.numeral, c.duration_default, c.fn));
+  btn.addEventListener('click', () => addChord(c.numeral, c.duration_default, c.fn, c.default_inversion ?? 0));
   return btn;
 }
 
 function renderPicker() {
   const container = document.getElementById('chord-picker');
   container.innerHTML = '';
-
-  // Group all chords by fn_role → tonic/predominant/dominant
-  const groups = { tonic: [], predominant: [], dominant: [] };
+  const groups = { tonic:[], predominant:[], dominant:[] };
   for (const chords of Object.values(chordData)) {
     for (const c of chords) {
       const role = c.fn_role || c.fn;
@@ -486,23 +446,19 @@ function renderPicker() {
       if (activeCategories.has(chordCategory(c))) groups[role].push(c);
     }
   }
-
   for (const [role, chords] of Object.entries(groups)) {
     if (!chords.length) continue;
     const group = document.createElement('div');
     group.className = 'fn-group';
     group.innerHTML = `<div class="fn-label">${FN_LABELS[role]}</div>`;
-    // Split into diatonic / non-diatonic with a divider if both present
     const diatonic = chords.filter(c => chordCategory(c) === 'diatonic');
     const other    = chords.filter(c => chordCategory(c) !== 'diatonic');
     const addGrid = cs => {
-      const g = document.createElement('div');
-      g.className = 'fn-buttons';
-      cs.forEach(c => g.appendChild(makeChordBtn(c)));
-      group.appendChild(g);
+      const g = document.createElement('div'); g.className = 'fn-buttons';
+      cs.forEach(c => g.appendChild(makeChordBtn(c))); group.appendChild(g);
     };
     if (diatonic.length) addGrid(diatonic);
-    if (diatonic.length && other.length) group.appendChild(Object.assign(document.createElement('hr'), {className: 'fn-divider'}));
+    if (diatonic.length && other.length) group.appendChild(Object.assign(document.createElement('hr'), {className:'fn-divider'}));
     if (other.length) addGrid(other);
     container.appendChild(group);
   }
@@ -514,238 +470,193 @@ async function addCustomChord() {
   if (!numeral) return;
   const key = document.getElementById('key-select').value;
   const mode = document.getElementById('mode-select').value;
-  const res = await fetch('/parse-chord', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ numeral, key, mode }),
-  });
-  const data = await res.json();
+  const data = await fetch('/parse-chord', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({numeral,key,mode})}).then(r=>r.json());
   if (data.error) { setStatus(`Error: ${data.error}`); return; }
-  previewChordByData(data);
-  addChord(data.numeral, data.duration_default, null);
+  if (!isPlaying) previewChordByData(data);
+  addChord(data.numeral, data.duration_default, null, data.default_inversion ?? 0);
   input.value = '';
 }
 
 document.getElementById('custom-numeral')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') addCustomChord();
+  if (e.key === 'Backspace' && e.target.value === '' && progression.length > 0) {
+    e.preventDefault(); removeChord(progression.length - 1);
+  }
 });
 
-// --- Progression ---
-function addChord(numeral, duration = 4.0, fn = null) {
-  const last = progression[progression.length - 1];
-  if (last && last.numeral === numeral) {
-    last.duration *= 2;
-  } else {
-    progression.push({ numeral, duration, fn, inversion: 0 });
-  }
-  renderProgression();
-  renderPicker();
-  updateVoiceTable();
-  saveState();
-}
-
-function isSeventhChord(numeral) {
-  return /7|maj7|ø7|o7/.test(numeral);
+// ── Progression ──
+function addChord(numeral, duration=4.0, fn=null, defaultInversion=0) {
+  const last = progression[progression.length-1];
+  if (last && last.numeral === numeral) { last.duration *= 2; }
+  else progression.push({numeral, duration, fn, inversion: defaultInversion});
+  renderUnified(); renderPicker(); saveState();
 }
 
 function removeChord(i) {
-  progression.splice(i, 1);
-  renderProgression();
-  renderPicker();
-  updateVoiceTable();
-  saveState();
+  progression.splice(i, 1); renderUnified(); renderPicker(); saveState();
 }
 
 function clearProgression() {
-  progression = [];
-  renderProgression();
-  renderPicker();
-  updateVoiceTable();
-  saveState();
+  progression = []; renderUnified(); renderPicker(); saveState();
 }
 
-let dragSrcIndex = null;
+function isSeventhChord(numeral) { return /7|maj7|h7|o7/.test(numeral); }
 
-function getTimeSig() {
-  return 4; // beats per bar — could wire to time sig selector later
-}
+function getTimeSig() { return 4; }
 
-function renderProgression() {
-  const list = document.getElementById('chord-list');
-  list.innerHTML = '';
+// ── Unified table ──
+async function renderUnified() {
+  const head = document.getElementById('ut-head');
+  const body = document.getElementById('ut-body');
+  if (!progression.length) {
+    head.innerHTML = '';
+    body.innerHTML = `<tr><td colspan="10" style="color:var(--text3);padding:12px">add chords to see voice leading</td></tr>`;
+    return;
+  }
+
+  let voiceData = null;
+  try { voiceData = await fetchVoiceLeading(); } catch {}
+
+  const nv = 4;
+  head.innerHTML = `<th></th><th>chord</th><th>dur</th>` +
+    Array.from({length:nv}, (_,i) => `<th class="th-voice" id="th-v${i}"></th>`).join('') + `<th></th>`;
+  // Inject sliders into voice header cells
+  for (let i = 0; i < nv; i++) {
+    const th = document.getElementById(`th-v${i}`);
+    const ch = document.createElement('div'); ch.className = 'voice-channel';
+    ch.innerHTML = `<label>V${i+1}</label><input type="range" min="0" max="100" value="${voiceVolumes[i]}" orient="vertical"><span class="vol-num">${voiceVolumes[i]}</span>`;
+    const slider = ch.querySelector('input'), num = ch.querySelector('.vol-num');
+    const update = v => { voiceVolumes[i] = parseInt(v); num.textContent = v; saveState(); };
+    slider.addEventListener('input', e => update(e.target.value));
+    addWheelNumber(slider, 5, 0, 100, el => update(el.value));
+    th.appendChild(ch);
+  }
+
+  const parallels = voiceData ? detectParallels(voiceData.table) : new Set();
+
   let beatCursor = 0;
+  body.innerHTML = '';
   progression.forEach((c, i) => {
     const bar = Math.floor(beatCursor / getTimeSig()) + 1;
     const beat = (beatCursor % getTimeSig()) + 1;
     const barLabel = beat === 1 ? `m.${bar}` : `m.${bar}.${beat}`;
     beatCursor += c.duration;
-    const item = document.createElement('div');
-    item.className = 'chord-item';
-    item.draggable = true;
-    item.addEventListener('dragstart', e => {
-      dragSrcIndex = i;
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
+
+    const row = document.createElement('tr');
+    row.draggable = true;
+
+    // Voice pitch cells
+    let voiceCells = Array.from({length:nv}, (_,vi) => `<td class="td-pitch">—</td>`).join('');
+    if (voiceData && voiceData.table[i]) {
+      const vtRow = voiceData.table[i];
+      voiceCells = vtRow.voices.map((v, vi) => {
+        const d = v.delta;
+        let cls = 'td-pitch';
+        if (d !== null) cls += d > 0 ? ' delta-pos' : d < 0 ? ' delta-neg' : ' delta-zero';
+        if (parallels.has(`${i}:${vi}`)) cls += ' parallel-warn';
+        const dstr = d === null ? '' : d === 0 ? ' —' : ` ${d>0?'+':''}${d}`;
+        return `<td class="${cls}">${formatPitch(v.pitch)}<span style="font-size:0.6rem;color:var(--text3)">${dstr}</span></td>`;
+      }).join('');
+    }
+
+    row.innerHTML = `
+      <td class="td-bar">${barLabel}</td>
+      <td><input class="td-numeral-input" value="${c.numeral}" spellcheck="false"></td>
+      <td><input class="td-dur" type="number" value="${c.duration}" min="0.5" max="64" step="0.5"></td>
+      ${voiceCells}
+      <td><button class="td-remove">×</button></td>
+    `;
+
+    // Editable numeral
+    const numInput = row.querySelector('.td-numeral-input');
+    numInput.addEventListener('change', async e => {
+      const key = document.getElementById('key-select').value;
+      const mode = document.getElementById('mode-select').value;
+      const val = e.target.value.trim();
+      const data = await fetch('/parse-chord', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({numeral:val,key,mode})}).then(r=>r.json());
+      if (data.error) { e.target.value = c.numeral; setStatus(`Error: ${data.error}`); return; }
+      progression[i].numeral = val;
+      progression[i].inversion = data.default_inversion ?? 0;
+      renderUnified(); saveState();
     });
-    item.addEventListener('dragend', () => item.classList.remove('dragging'));
-    item.addEventListener('dragover', e => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      document.querySelectorAll('.chord-item').forEach(el => el.classList.remove('drag-over'));
-      item.classList.add('drag-over');
-    });
-    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-    item.addEventListener('drop', e => {
-      e.preventDefault();
-      item.classList.remove('drag-over');
+    numInput.addEventListener('keydown', e => { if (e.key==='Enter') e.target.blur(); if (e.key==='Escape') { e.target.value=c.numeral; e.target.blur(); } });
+
+    const durInput = row.querySelector('.td-dur');
+    durInput.addEventListener('change', e => { progression[i].duration = parseFloat(e.target.value); renderUnified(); saveState(); });
+    addWheelNumber(durInput, 0.5, 0.5, 64, el => { progression[i].duration = parseFloat(el.value); renderUnified(); saveState(); });
+
+    row.querySelector('.td-remove').addEventListener('click', e => { e.stopPropagation(); removeChord(i); });
+
+    // Drag reorder
+    row.addEventListener('dragstart', e => { dragSrcIndex = i; row.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    row.addEventListener('dragend', () => row.classList.remove('dragging'));
+    row.addEventListener('dragover', e => { e.preventDefault(); document.querySelectorAll('#unified-table tr').forEach(r => r.classList.remove('drag-over')); row.classList.add('drag-over'); });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', e => {
+      e.preventDefault(); row.classList.remove('drag-over');
       if (dragSrcIndex === null || dragSrcIndex === i) return;
       const moved = progression.splice(dragSrcIndex, 1)[0];
       progression.splice(i, 0, moved);
-      dragSrcIndex = null;
-      renderProgression();
-      updateVoiceTable();
-      saveState();
-    });
-    const invOptions = isSeventhChord(c.numeral) ? ['R','1st','2nd','3rd','auto'] : ['R','1st','2nd','auto'];
-    const invValues  = isSeventhChord(c.numeral) ? [0,1,2,3,-1] : [0,1,2,-1];
-    const invHtml = invOptions.map((l, idx) => {
-      const v = invValues[idx];
-      return `<option value="${v}" ${c.inversion === v ? 'selected' : ''}>${l}</option>`;
-    }).join('');
-    item.innerHTML = `
-      <span class="bar-num">${barLabel}</span>
-      <span class="numeral">${c.numeral}</span>
-      <input class="dur-input" type="number" value="${c.duration}" min="0.5" max="64" step="0.5">
-      <span class="beats-label">♩</span>
-      <select class="inv-select">${invHtml}</select>
-      <button class="remove-btn" title="remove">×</button>
-    `;
-    const durEl = item.querySelector('.dur-input');
-    durEl.addEventListener('change', e => {
-      progression[i].duration = parseFloat(e.target.value);
-      updateVoiceTable(); saveState();
-    });
-    addWheelNumber(durEl, 0.5, 0.5, 64, el => {
-      progression[i].duration = parseFloat(el.value);
-      updateVoiceTable(); saveState();
+      dragSrcIndex = null; renderUnified(); saveState();
     });
 
-    const invSel = item.querySelector('.inv-select');
-    invSel.addEventListener('change', e => {
-      progression[i].inversion = parseInt(e.target.value);
-      updateVoiceTable(); saveState();
-    });
-    addWheelSelect(invSel, el => {
-      progression[i].inversion = parseInt(el.value);
-      updateVoiceTable(); saveState();
-    });
-    item.querySelector('.remove-btn').addEventListener('click', () => removeChord(i));
-    list.appendChild(item);
+    body.appendChild(row);
   });
 }
 
-// --- Voice table ---
+async function updateUnifiedVoices() { await renderUnified(); }
+
 async function fetchVoiceLeading() {
   const key = document.getElementById('key-select').value;
   const mode = document.getElementById('mode-select').value;
-  const tempo = parseInt(document.getElementById('tempo').value);
-  const res = await fetch('/voice-lead', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      key, mode, tempo, time_sig: [4,4], n_voices: 4,
-      voicing_style: document.getElementById('voicing-select').value,
-      voice_volumes: voiceVolumes,
-      chords: progression.map(c => ({numeral: c.numeral, duration: c.duration, inversion: c.inversion ?? 0})),
-    }),
-  });
-  return res.json();
+  const tempo = parseInt(tempoEl.value);
+  return fetch('/voice-lead', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({key, mode, tempo, time_sig:[4,4], n_voices:4,
+      voicing_style: voicingEl.value, voice_volumes: voiceVolumes,
+      chords: progression.map(c => ({numeral:c.numeral, duration:c.duration, inversion:c.inversion??0}))})
+  }).then(r => r.json());
 }
 
 function detectParallels(table) {
   const warned = new Set();
-  for (let i = 1; i < table.length; i++) {
-    const prev = table[i-1].voices, curr = table[i].voices;
-    const pm = prev.map(v => pitchNameToMidi(v.pitch));
-    const cm = curr.map(v => pitchNameToMidi(v.pitch));
-    for (let a = 0; a < prev.length; a++) {
-      for (let b = a+1; b < prev.length; b++) {
-        if (!pm[a]||!pm[b]||!cm[a]||!cm[b]) continue;
-        const pi = Math.abs(pm[a]-pm[b]) % 12, ci = Math.abs(cm[a]-cm[b]) % 12;
-        if (pi === ci && (ci === 7 || ci === 0) && curr[a].delta !== 0 && curr[b].delta !== 0 && curr[a].delta !== null) {
-          warned.add(`${i}:${a}`); warned.add(`${i}:${b}`);
-        }
-      }
+  for (let i=1; i<table.length; i++) {
+    const prev=table[i-1].voices, curr=table[i].voices;
+    const pm=prev.map(v=>pitchNameToMidi(v.pitch)), cm=curr.map(v=>pitchNameToMidi(v.pitch));
+    for (let a=0; a<prev.length; a++) for (let b=a+1; b<prev.length; b++) {
+      if (!pm[a]||!pm[b]||!cm[a]||!cm[b]) continue;
+      const pi=Math.abs(pm[a]-pm[b])%12, ci=Math.abs(cm[a]-cm[b])%12;
+      if (pi===ci&&(ci===7||ci===0)&&curr[a].delta!==0&&curr[b].delta!==0&&curr[a].delta!==null)
+        { warned.add(`${i}:${a}`); warned.add(`${i}:${b}`); }
     }
   }
   return warned;
 }
 
-async function updateVoiceTable() {
-  const head = document.getElementById('vt-head');
-  const body = document.getElementById('vt-body');
-  if (progression.length === 0) {
-    head.innerHTML = '';
-    body.innerHTML = `<tr><td colspan="6" style="color:var(--text3);padding:12px">add chords to see voice leading</td></tr>`;
-    return;
-  }
-  const data = await fetchVoiceLeading();
-  const nv = data.table[0]?.voices.length || 4;
-  const parallels = detectParallels(data.table);
-  head.innerHTML = '<th>Chord</th><th>Dur</th>' + Array.from({length:nv},(_,i)=>`<th>V${i+1}</th>`).join('');
-  body.innerHTML = data.table.map((row, ri) => {
-    const cells = row.voices.map((v, vi) => {
-      const d = v.delta;
-      let cls = d === null ? '' : d > 0 ? 'delta-pos' : d < 0 ? 'delta-neg' : 'delta-zero';
-      if (parallels.has(`${ri}:${vi}`)) cls += ' parallel-warn';
-      const dstr = d === null ? '' : d === 0 ? ' (—)' : ` (${d>0?'+':''}${d})`;
-      return `<td class="${cls}">${formatPitch(v.pitch)}${dstr}</td>`;
-    }).join('');
-    return `<tr><td>${row.numeral}</td><td style="color:var(--text3)">${row.duration}♩</td>${cells}</tr>`;
-  }).join('');
-}
-
-// --- Export ---
+// ── Export ──
 async function exportMidi() {
-  if (progression.length === 0) return;
-  const key = document.getElementById('key-select').value;
-  const mode = document.getElementById('mode-select').value;
-  const tempo = parseInt(document.getElementById('tempo').value);
-  const res = await fetch('/export/midi', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      key, mode, tempo, time_sig: [4,4], n_voices: 4,
-      voicing_style: document.getElementById('voicing-select').value,
-      voice_volumes: voiceVolumes,
-      chords: progression.map(c => ({numeral: c.numeral, duration: c.duration, inversion: c.inversion ?? 0})),
-    }),
-  });
+  if (!progression.length) return;
+  const key=document.getElementById('key-select').value, mode=document.getElementById('mode-select').value, tempo=parseInt(tempoEl.value);
+  const res = await fetch('/export/midi', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({key,mode,tempo,time_sig:[4,4],n_voices:4,voicing_style:voicingEl.value,
+      voice_volumes:voiceVolumes, chords:progression.map(c=>({numeral:c.numeral,duration:c.duration,inversion:c.inversion??0}))})});
   const blob = await res.blob();
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'harmonysplorer.mid';
-  a.click();
+  Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:'harmonysplorer.mid'}).click();
 }
 
 function exportProject() {
-  const state = {
-    progression, voiceVolumes,
-    key: document.getElementById('key-select').value,
-    mode: document.getElementById('mode-select').value,
-    tempo: document.getElementById('tempo').value,
-    voicing: document.getElementById('voicing-select').value,
-  };
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `harmonysplorer_${state.key}${state.mode}_${Date.now()}.json`;
+  const state = {progression, voiceVolumes, oscType,
+    key:document.getElementById('key-select').value, mode:document.getElementById('mode-select').value,
+    tempo:document.getElementById('tempo').value, voicing:voicingEl.value,
+    pickerWidth: getComputedStyle(document.documentElement).getPropertyValue('--picker-width').trim()};
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'})),
+    download: `harmonysplorer_${state.key}${state.mode}_${Date.now()}.json`});
   a.click();
 }
 
 function importProject(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
     try {
@@ -753,24 +664,19 @@ function importProject(e) {
       if (s.key) document.getElementById('key-select').value = s.key;
       if (s.mode) document.getElementById('mode-select').value = s.mode;
       if (s.tempo) document.getElementById('tempo').value = s.tempo;
-      if (s.voicing) document.getElementById('voicing-select').value = s.voicing;
+      if (s.voicing) voicingEl.value = s.voicing;
       if (Array.isArray(s.progression)) progression = s.progression;
       if (Array.isArray(s.voiceVolumes)) voiceVolumes = s.voiceVolumes;
-      saveState();
-      renderMixer();
-      loadChords();
-      renderProgression();
-      updateVoiceTable();
+      if (s.oscType) oscType = s.oscType;
+      if (s.pickerWidth) document.documentElement.style.setProperty('--picker-width', s.pickerWidth);
+      saveState(); loadChords(); renderUnified();
       setStatus(`Loaded ${file.name}`);
     } catch { setStatus('Import failed — invalid JSON'); }
   };
-  reader.readAsText(file);
-  e.target.value = '';
+  reader.readAsText(file); e.target.value = '';
 }
 
-function setStatus(msg) {
-  document.getElementById('status').textContent = msg;
-}
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
 
 init();
 </script>
