@@ -829,6 +829,10 @@ function loadState() {
 // ── Init ──
 async function init() {
   loadState();
+  // Prevent table scroll container from stealing wheel events over inputs
+  document.getElementById('unified-table-wrap').addEventListener('wheel', e => {
+    if (e.target.tagName === 'INPUT') e.preventDefault();
+  }, {passive: false});
   initDragHandle();
   renderCatFilters();
   loadChords();
@@ -1229,7 +1233,13 @@ function renderUnified() {
 
     const durInput = row.querySelector('.td-dur');
     durInput.addEventListener('change', e => { progression[i].duration = parseFloat(e.target.value); renderUnified(); saveState(); });
-    addWheelNumber(durInput, 0.5, 0.5, 64, el => { progression[i].duration = parseFloat(el.value); renderUnified(); saveState(); });
+    let durTimer = null;
+    addWheelNumber(durInput, 0.5, 0.5, 64, el => {
+      progression[i].duration = parseFloat(el.value);
+      saveState();
+      clearTimeout(durTimer);
+      durTimer = setTimeout(() => renderUnified(), 180);
+    });
 
     row.querySelector('.td-remove').addEventListener('click', e => { e.stopPropagation(); removeChord(i); });
 
