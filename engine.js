@@ -358,6 +358,9 @@
     return voices.slice().sort((a, b) => a - b);
   }
 
+  // Traditional SATB ranges [lo, hi] in MIDI, index 0 = bass
+  const SATB_RANGES = [[40,60],[48,67],[55,72],[60,79]];
+
   function applyVoicingStyle(voices, style) {
     let v = voices.slice().sort((a, b) => a - b);
     if (style === "drop2" && v.length >= 3) {
@@ -368,8 +371,12 @@
       if (v.length >= 4) v[2] += 12;
       v.sort((a, b) => a - b);
     }
-    v = v.map(x => x > 79 ? x - 12 : x);
-    v = v.map(x => x < 36 ? x + 12 : x);
+    v = v.map((midi, i) => {
+      const [lo, hi] = SATB_RANGES[i] || [36, 84];
+      while (midi < lo) midi += 12;
+      while (midi > hi) midi -= 12;
+      return midi;
+    });
     return v.sort((a, b) => a - b);
   }
 

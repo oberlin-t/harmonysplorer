@@ -364,6 +364,9 @@
     return voices.slice().sort((a, b) => a - b);
   }
 
+  // Traditional SATB ranges [lo, hi] in MIDI, index 0 = bass
+  const SATB_RANGES = [[40,60],[48,67],[55,72],[60,79]];
+
   function applyVoicingStyle(voices, style) {
     let v = voices.slice().sort((a, b) => a - b);
     if (style === "drop2" && v.length >= 3) {
@@ -374,8 +377,12 @@
       if (v.length >= 4) v[2] += 12;
       v.sort((a, b) => a - b);
     }
-    v = v.map(x => x > 79 ? x - 12 : x);
-    v = v.map(x => x < 36 ? x + 12 : x);
+    v = v.map((midi, i) => {
+      const [lo, hi] = SATB_RANGES[i] || [36, 84];
+      while (midi < lo) midi += 12;
+      while (midi > hi) midi -= 12;
+      return midi;
+    });
     return v.sort((a, b) => a - b);
   }
 
@@ -1025,7 +1032,7 @@ function renderMixer() {
   voiceVolumes.forEach((vol, i) => {
     const ch = document.createElement('div');
     ch.className = 'voice-channel';
-    ch.innerHTML = `<label>V${i+1}</label><input type="range" min="0" max="100" value="${vol}" orient="vertical"><span class="vol-num">${vol}</span>`;
+    ch.innerHTML = `<label>${['B','T','A','S'][i]||'V'+(i+1)}</label><input type="range" min="0" max="100" value="${vol}" orient="vertical"><span class="vol-num">${vol}</span>`;
     const slider = ch.querySelector('input');
     const num = ch.querySelector('.vol-num');
     const update = v => { voiceVolumes[i]=parseInt(v); num.textContent=v; saveState(); };
@@ -1174,7 +1181,7 @@ function renderUnified() {
   for (let i = 0; i < nv; i++) {
     const th = document.getElementById(`th-v${i}`);
     const ch = document.createElement('div'); ch.className = 'voice-channel';
-    ch.innerHTML = `<label>V${i+1}</label><input type="range" min="0" max="100" value="${voiceVolumes[i]}" orient="vertical"><span class="vol-num">${voiceVolumes[i]}</span>`;
+    ch.innerHTML = `<label>${['B','T','A','S'][i]||'V'+(i+1)}</label><input type="range" min="0" max="100" value="${voiceVolumes[i]}" orient="vertical"><span class="vol-num">${voiceVolumes[i]}</span>`;
     const slider = ch.querySelector('input'), num = ch.querySelector('.vol-num');
     const update = v => { voiceVolumes[i] = parseInt(v); num.textContent = v; saveState(); };
     slider.addEventListener('input', e => update(e.target.value));
