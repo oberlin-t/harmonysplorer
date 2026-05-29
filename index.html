@@ -1000,29 +1000,31 @@ async function startPlayback() {
   await ensureAudio();
   isPlaying = true;
   document.getElementById('play-btn').textContent = '■ Stop';
-  await playProgression();
+  playProgressionAt(audioCtx.currentTime + 0.05);
 }
-async function playProgression() {
+function playProgressionAt(startTime) {
   if (!isPlaying) return;
   const bps = parseInt(tempoEl.value) / 60;
-  let time = 0;
+  let totalDur = 0;
   try {
     const voiced = fetchVoiceLeading();
     for (const row of voiced.table) {
       const dur = row.duration / bps;
+      const offset = startTime - audioCtx.currentTime + totalDur;
       row.voices.forEach((v, vi) => {
         const midi = pitchNameToMidi(v.pitch);
-        if (midi) playNote(midi, dur*0.92, time, voiceVolumes[vi]/100);
+        if (midi) playNote(midi, dur * 0.92, Math.max(0, offset), voiceVolumes[vi] / 100);
       });
-      time += dur;
+      totalDur += dur;
     }
-  } catch { time = 2; }
-  if (isPlaying) {
-    loopTimeout = setTimeout(() => {
-      if (isLooping || time > 0) playProgression();
-      else { isPlaying = false; document.getElementById('play-btn').textContent = '▶ Play'; }
-    }, time*1000);
-  }
+  } catch { totalDur = 2; }
+  const nextStart = startTime + totalDur;
+  const msUntilNext = Math.max(0, (nextStart - audioCtx.currentTime) * 1000 - 30);
+  loopTimeout = setTimeout(() => {
+    if (!isPlaying) return;
+    if (isLooping) playProgressionAt(nextStart);
+    else { isPlaying = false; document.getElementById('play-btn').textContent = '▶ Play'; }
+  }, msUntilNext);
 }
 
 // ── Mixer ──
